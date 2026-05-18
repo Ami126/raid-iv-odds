@@ -372,7 +372,7 @@ h3 {
 .context-strip {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .context-card {
@@ -382,18 +382,19 @@ h3 {
   padding: 12px;
 }
 
-.context-button {
-  color: inherit;
-  text-align: left;
+.context-edit {
+  align-content: start;
+  display: grid;
+  gap: 8px;
+  min-height: 108px;
 }
 
-.context-button em {
+.context-edit em {
   color: var(--accent);
   display: block;
   font-size: 0.76rem;
   font-style: normal;
   font-weight: 850;
-  margin-top: 5px;
 }
 
 .context-card span {
@@ -404,11 +405,69 @@ h3 {
   text-transform: uppercase;
 }
 
-.context-card strong {
-  display: block;
-  font-size: 1.05rem;
-  margin-top: 5px;
-  overflow-wrap: anywhere;
+.context-card input,
+.context-card select {
+  appearance: none;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font-size: 1.45rem;
+  font-weight: 950;
+  line-height: 1.1;
+  min-height: 44px;
+  min-width: 0;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.context-card select.summary-value {
+  appearance: auto;
+}
+
+.context-card:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-focus);
+}
+
+.context-card input:disabled {
+  color: var(--muted);
+}
+
+.mini-toggle {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.mini-toggle input {
+  accent-color: var(--accent);
+  min-height: auto;
+  width: 16px;
+}
+
+.mini-stat-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mini-stat-grid label {
+  display: grid;
+  gap: 4px;
+}
+
+.mini-stat-grid span {
+  font-size: 0.66rem;
+}
+
+.mini-stat-grid input {
+  font-size: 0.9rem;
+  min-height: 38px;
+  padding: 7px 8px;
 }
 
 .control-surface,
@@ -1149,6 +1208,11 @@ html[data-density="compact"] .watch-row {
 
   .stat-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .context-card input,
+  .context-card select {
+    font-size: 1.25rem;
   }
 
   .watch-table-head {

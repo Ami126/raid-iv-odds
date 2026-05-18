@@ -123,10 +123,12 @@ const TEXT = {
       "No exact level 20 or level 25 IV spread can produce CP {cp} with the selected boss and IV floor.",
     pokemonContext: "Pokemon",
     analyzingCp: "Analyzing CP",
-    tapToEdit: "Tap to edit",
     ivFloor: "IV floor",
     prePurifyTarget: "Pre-purify target",
     baseStats: "Base stats",
+    attackShort: "Atk",
+    defenseShort: "Def",
+    staminaShort: "Sta",
     catchLevelRange: "Catch level {level}; CP range {min}-{max}",
     matchingSpreads: "Matching spreads",
     purifyHundos: "Purify hundos",
@@ -231,10 +233,12 @@ const TEXT = {
     cpNotPossibleCopy: "選択中のボスと個体値最低値では、CP {cp} はレベル20/25の候補に一致しません。",
     pokemonContext: "ポケモン",
     analyzingCp: "判定中CP",
-    tapToEdit: "タップして編集",
     ivFloor: "個体値最低値",
     prePurifyTarget: "リトレーン前の目安",
     baseStats: "種族値",
+    attackShort: "攻撃",
+    defenseShort: "防御",
+    staminaShort: "HP",
     catchLevelRange: "捕獲レベル {level}; CP範囲 {min}-{max}",
     matchingSpreads: "該当候補",
     purifyHundos: "100%化候補",
@@ -488,11 +492,9 @@ function bindEvents(): void {
 
   elements.resultsGrid.addEventListener("click", handleCpButtonClick);
   elements.watchlistGrid.addEventListener("click", handleCpButtonClick);
-  elements.contextStrip.addEventListener("click", (event) => {
-    if (!(event.target instanceof Element) || !event.target.closest("[data-focus-cp]")) return;
-    elements.cpInput.focus();
-    elements.cpInput.select();
-  });
+  elements.contextStrip.addEventListener("input", handleSummaryEdit);
+  elements.contextStrip.addEventListener("change", handleSummaryEdit);
+  elements.contextStrip.addEventListener("keydown", handleSummaryKeydown);
 
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
@@ -536,6 +538,42 @@ function commitPokemonInput(forceMatch: boolean): void {
   elements.pokemonSelect.value = match.name;
   syncStatsToSelected();
   render();
+}
+
+function handleSummaryEdit(event: Event): void {
+  if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) return;
+  const control = event.target.dataset.summaryControl;
+  const shouldRender = event.type === "change" || control === "pokemon" || control === "floor" || control === "manual";
+
+  if (control === "pokemon") {
+    elements.pokemonSelect.value = event.target.value;
+    syncStatsToSelected();
+    render();
+    return;
+  }
+
+  if (control === "cp") elements.cpInput.value = event.target.value;
+  if (control === "floor") elements.floorInput.value = event.target.value;
+  if (control === "bonus") elements.bonusInput.value = event.target.value;
+  if (control === "manual" && event.target instanceof HTMLInputElement) {
+    elements.manualStats.checked = event.target.checked;
+    if (!elements.manualStats.checked) syncStatsToSelected();
+    syncManualState();
+  }
+  if (control === "atk") elements.atkInput.value = event.target.value;
+  if (control === "def") elements.defInput.value = event.target.value;
+  if (control === "sta") elements.staInput.value = event.target.value;
+
+  if (shouldRender) render();
+}
+
+function handleSummaryKeydown(event: KeyboardEvent): void {
+  if (event.key !== "Enter") return;
+  if (!(event.target instanceof HTMLInputElement)) return;
+  if (!event.target.dataset.summaryControl) return;
+  event.preventDefault();
+  render();
+  elements.contextStrip.querySelector<HTMLInputElement>(`[data-summary-control="${event.target.dataset.summaryControl}"]`)?.focus();
 }
 
 function syncPokemonInputToSelected(): void {
@@ -771,11 +809,31 @@ function renderPrimaryInsight(
   const threshold = purifiedThreshold(settings.purifyBonus);
   const pokemon = selectedPokemon();
   elements.contextStrip.innerHTML = `
-    <div class="context-card"><span>${copy("pokemonContext")}</span><strong>${escapeHtml(pokemonDisplayName(pokemon))}</strong></div>
-    <button class="context-card context-button" type="button" data-focus-cp><span>${copy("analyzingCp")}</span><strong>${settings.cp}</strong><em>${copy("tapToEdit")}</em></button>
-    <div class="context-card"><span>${copy("ivFloor")}</span><strong>${settings.raidFloor}/${settings.raidFloor}/${settings.raidFloor}</strong></div>
-    <div class="context-card"><span>${copy("prePurifyTarget")}</span><strong>${threshold}/${threshold}/${threshold}+</strong></div>
-    <div class="context-card"><span>${copy("baseStats")}</span><strong>${settings.baseStats.atk}/${settings.baseStats.def}/${settings.baseStats.sta}</strong></div>
+    <label class="context-card context-edit">
+      <span>${copy("pokemonContext")}</span>
+      <select class="summary-value" data-summary-control="pokemon">${renderPokemonSelectOptions(pokemon.name)}</select>
+    </label>
+    <label class="context-card context-edit">
+      <span>${copy("analyzingCp")}</span>
+      <input class="summary-value" data-summary-control="cp" inputmode="numeric" min="${MIN_CP}" type="number" value="${settings.cp}" />
+    </label>
+    <label class="context-card context-edit">
+      <span>${copy("ivFloor")}</span>
+      <select class="summary-value" data-summary-control="floor">${renderIvFloorOptions(settings.raidFloor)}</select>
+    </label>
+    <label class="context-card context-edit">
+      <span>${copy("purifyBonus")}</span>
+      <input class="summary-value" data-summary-control="bonus" inputmode="numeric" max="${MAX_IV}" min="0" type="number" value="${settings.purifyBonus}" />
+      <em>${copy("prePurifyTarget")}: ${threshold}/${threshold}/${threshold}+</em>
+    </label>
+    <div class="context-card context-edit">
+      <span>${copy("baseStats")}</span>
+      <label class="mini-toggle">
+        <input data-summary-control="manual" type="checkbox" ${elements.manualStats.checked ? "checked" : ""} />
+        ${copy("manualBaseStats")}
+      </label>
+      ${renderSummaryStats(settings.baseStats)}
+    </div>
   `;
 }
 
@@ -829,6 +887,49 @@ function renderResultPanel(summary: CpSummary): string {
 
       ${renderCombos(summary)}
     </article>
+  `;
+}
+
+function renderPokemonSelectOptions(selectedName: string): string {
+  return sortedPokemon()
+    .map(
+      (pokemon) =>
+        `<option value="${escapeHtml(pokemon.name)}" ${pokemon.name === selectedName ? "selected" : ""}>${escapeHtml(
+          pokemonInputValue(pokemon),
+        )}</option>`,
+    )
+    .join("");
+}
+
+function renderIvFloorOptions(selectedFloor: number): string {
+  return Array.from({ length: MAX_IV + 1 }, (_value, floor) => {
+    const label =
+      floor === 6
+        ? copy("floorShadow")
+        : floor === 10
+          ? copy("floorStandard")
+          : `${copy("floorCustom")}: ${floor}/${floor}/${floor}`;
+    return `<option value="${floor}" ${floor === selectedFloor ? "selected" : ""}>${escapeHtml(label)}</option>`;
+  }).join("");
+}
+
+function renderSummaryStats(baseStats: BaseStats): string {
+  const disabled = elements.manualStats.checked ? "" : "disabled";
+  return `
+    <div class="mini-stat-grid">
+      <label>
+        <span>${copy("attackShort")}</span>
+        <input data-summary-control="atk" inputmode="numeric" min="1" type="number" value="${baseStats.atk}" ${disabled} />
+      </label>
+      <label>
+        <span>${copy("defenseShort")}</span>
+        <input data-summary-control="def" inputmode="numeric" min="1" type="number" value="${baseStats.def}" ${disabled} />
+      </label>
+      <label>
+        <span>${copy("staminaShort")}</span>
+        <input data-summary-control="sta" inputmode="numeric" min="1" type="number" value="${baseStats.sta}" ${disabled} />
+      </label>
+    </div>
   `;
 }
 

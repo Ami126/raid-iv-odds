@@ -1,4 +1,4 @@
-const CACHE_NAME = "raid-iv-odds-shell-v5";
+const CACHE_NAME = "raid-iv-odds-shell-v6";
 const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/, "");
 const withScope = (path) => `${scopePath}${path}`;
 const APP_SHELL = [
