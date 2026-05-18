@@ -10,40 +10,93 @@
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <style>
+      :root {
+        color-scheme: light dark;
+      }
+
       body {
-        color: #132027;
+        background: light-dark(#f5f7f3, #101417);
+        color: light-dark(#132027, #f1f7f5);
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        line-height: 1.55;
+        line-height: 1.6;
         margin: 0 auto;
-        max-width: 760px;
+        max-width: 840px;
         padding: 32px 20px;
+      }
+
+      main {
+        display: grid;
+        gap: 28px;
+      }
+
+      section {
+        background: light-dark(#ffffff, #171e22);
+        border: 1px solid light-dark(#d7e0dd, #334147);
+        border-radius: 8px;
+        padding: 22px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      p:last-child {
+        margin-bottom: 0;
       }
 
       a {
         color: #0a7775;
+        font-weight: 750;
       }
     </style>
   </head>
   <body>
-    <h1>Privacy Policy</h1>
-    <p>Raid IV Odds is an unofficial utility that performs calculations on your device.</p>
-    <p>
-      The app does not require an account and does not send calculator inputs to a server.
-      Display preferences may be stored locally on your device so the app can remember your theme and view settings.
-    </p>
-    <p>
-      This build does not load analytics by default. If analytics are added later, they should remain privacy-friendly and
-      should not include your selected Pokemon, entered CP, or IV results.
-    </p>
-    <p>
-      The public app is a static site. Visitors cannot edit the live app or publish code changes. Public GitHub users may
-      suggest changes through forks or pull requests, but only the repository owner or approved collaborators can merge and
-      deploy them.
-    </p>
-    <p>
-      Unofficial fan-made calculator. Not affiliated with, sponsored by, endorsed by, or approved by Niantic, Scopely,
-      The Pokemon Company, Nintendo, Creatures, or GAME FREAK.
-    </p>
-    <p><a href="/raid-iv-odds/">Back to app</a></p>
+    <main>
+      <section lang="en">
+        <h1>Privacy Policy</h1>
+        <p>Raid IV Odds is an unofficial calculator that runs in your browser.</p>
+        <p>
+          The app does not require an account. Your selected raid boss, entered CP, IV floor, theme, and language settings
+          are processed on your device. These calculator inputs are not sent to an app server.
+        </p>
+        <p>
+          Your browser may store preferences locally so the app can remember your display settings. You can clear this at
+          any time through your browser or device site data settings.
+        </p>
+        <p>
+          The site is hosted on GitHub Pages, which may receive standard technical request information needed to serve web
+          pages. If you submit feedback through GitHub, that information is handled by GitHub and may be public depending
+          on where you post it.
+        </p>
+        <p>
+          Unofficial fan-made calculator. Not affiliated with, sponsored by, endorsed by, or approved by Niantic, Scopely,
+          The Pokemon Company, Nintendo, Creatures, or GAME FREAK.
+        </p>
+        <p><a href="/raid-iv-odds/">Back to app</a></p>
+      </section>
+
+      <section lang="ja">
+        <h2>プライバシーポリシー</h2>
+        <p>Raid IV Oddsは、ブラウザ上で動作する非公式の計算ツールです。</p>
+        <p>
+          アカウント登録は不要です。選択したレイドボス、入力したCP、個体値の最低値、テーマ、言語設定は端末上で処理されます。
+          これらの計算入力はアプリ用サーバーへ送信されません。
+        </p>
+        <p>
+          表示設定を記憶するため、ブラウザが端末内に設定を保存する場合があります。保存された設定は、ブラウザまたは端末のサイトデータ設定から削除できます。
+        </p>
+        <p>
+          このサイトはGitHub Pagesでホストされています。Webページを配信するために必要な標準的な技術情報がGitHub側で処理される場合があります。
+          GitHubでフィードバックを送信した場合、その内容はGitHubの取り扱いとなり、投稿場所によっては公開される場合があります。
+        </p>
+        <p>
+          本ツールは非公式のファンメイド計算ツールです。Niantic、Scopely、The Pokemon Company、Nintendo、Creatures、GAME FREAKとは
+          提携・後援・承認関係にありません。
+        </p>
+        <p><a href="/raid-iv-odds/">アプリへ戻る</a></p>
+      </section>
+    </main>
   </body>
 </html>

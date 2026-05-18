@@ -223,6 +223,20 @@ h3 {
   gap: 8px;
 }
 
+.appearance-group {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.appearance-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .segmented {
   background: var(--surface-muted);
   border: 1px solid var(--line);
@@ -813,7 +827,7 @@ h3 {
   border: 1px solid var(--accent-line);
   border-radius: 999px;
   color: var(--accent);
-  content: "Open";
+  content: attr(data-watch-open);
   display: inline-grid;
   flex: 0 0 auto;
   font-size: 0.74rem;
@@ -824,7 +838,7 @@ h3 {
 }
 
 .watch-panel[open] .watch-head::before {
-  content: "Close";
+  content: attr(data-watch-close);
 }
 
 .watch-head p {
@@ -1076,6 +1090,10 @@ html[data-density="compact"] .watch-row {
   .appearance-panel {
     overflow-x: auto;
     padding-bottom: 2px;
+  }
+
+  .appearance-group {
+    grid-template-columns: 1fr;
   }
 
   .segmented {

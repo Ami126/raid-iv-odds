@@ -21,7 +21,7 @@
     <link rel="icon" href="/raid-iv-odds/assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" sizes="180x180" href="/raid-iv-odds/assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="./styles.css" />
-    <script type="module" src="/src/main.js?v=6"></script>
+    <script type="module" src="/src/main.js?v=7"></script>
   </head>
   <body>
     <a class="skip-link" href="#resultsGrid" data-i18n="skipToResults">Skip to results</a>
@@ -36,20 +36,29 @@
         </div>
 
         <div class="appearance-panel" aria-label="Display options">
-          <div class="segmented" aria-label="Theme">
-            <button type="button" data-theme-choice="system" data-i18n="themeSystem">System</button>
-            <button type="button" data-theme-choice="light" data-i18n="themeLight">Light</button>
-            <button type="button" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
+          <div class="appearance-group">
+            <span class="appearance-label" data-i18n="themeLabel">Theme</span>
+            <div class="segmented" aria-label="Theme">
+              <button type="button" data-theme-choice="system" data-i18n="themeSystem">System</button>
+              <button type="button" data-theme-choice="light" data-i18n="themeLight">Light</button>
+              <button type="button" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
+            </div>
           </div>
-          <div class="segmented language-segment" aria-label="Language">
-            <button type="button" data-language-choice="en">EN</button>
-            <button type="button" data-language-choice="ja">日本語</button>
+          <div class="appearance-group">
+            <span class="appearance-label" data-i18n="languageLabel">Language</span>
+            <div class="segmented language-segment" aria-label="Language">
+              <button type="button" data-language-choice="en">EN</button>
+              <button type="button" data-language-choice="ja">日本語</button>
+            </div>
           </div>
-          <div class="segmented palette-segment" aria-label="Accent color">
-            <button type="button" data-accent-choice="aqua">Aqua</button>
-            <button type="button" data-accent-choice="mystic">Mystic</button>
-            <button type="button" data-accent-choice="valor">Valor</button>
-            <button type="button" data-accent-choice="instinct">Instinct</button>
+          <div class="appearance-group">
+            <span class="appearance-label" data-i18n="accentLabel">Accent</span>
+            <div class="segmented palette-segment" aria-label="Accent color">
+              <button type="button" data-accent-choice="aqua">Aqua</button>
+              <button type="button" data-accent-choice="mystic">Mystic</button>
+              <button type="button" data-accent-choice="valor">Valor</button>
+              <button type="button" data-accent-choice="instinct">Instinct</button>
+            </div>
           </div>
         </div>
 

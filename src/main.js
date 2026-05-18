@@ -14,9 +14,12 @@ const TEXT = {
         skipToResults: "Skip to results",
         eyebrow: "Unofficial raid IV tool",
         appTitle: "Purified Hundo Odds",
+        themeLabel: "Theme",
         themeSystem: "System",
         themeLight: "Light",
         themeDark: "Dark",
+        languageLabel: "Language",
+        accentLabel: "Accent",
         pokemonLabel: "Pokemon",
         observedCpLabel: "Observed CP",
         manualBaseStats: "Manual base stats",
@@ -81,6 +84,8 @@ const TEXT = {
         goodMiss: "{good} good / {bad} miss",
         watchlistTitle: "{scenario} Watchlist",
         watchlistHint: "Tap to view CPs that have at least one spread that purifies to 15/15/15.",
+        watchOpen: "Open",
+        watchClose: "Close",
         watchSummary: "{shown}/{total} CPs, {guaranteed} guaranteed",
         tableCp: "CP",
         tableChance: "Chance",
@@ -102,9 +107,12 @@ const TEXT = {
         skipToResults: "結果へスキップ",
         eyebrow: "非公式レイド個体値ツール",
         appTitle: "リトレーン100%個体値の確率",
+        themeLabel: "テーマ",
         themeSystem: "端末設定",
         themeLight: "ライト",
         themeDark: "ダーク",
+        languageLabel: "言語",
+        accentLabel: "カラー",
         pokemonLabel: "レイドボス",
         observedCpLabel: "確認したCP",
         manualBaseStats: "種族値を手入力",
@@ -169,6 +177,8 @@ const TEXT = {
         goodMiss: "対象 {good} / 対象外 {bad}",
         watchlistTitle: "{scenario}ウォッチリスト",
         watchlistHint: "リトレーン後15/15/15になる候補を含むCPを表示します。",
+        watchOpen: "開く",
+        watchClose: "閉じる",
         watchSummary: "{shown}/{total} CP、確定 {guaranteed}",
         tableCp: "CP",
         tableChance: "確率",
@@ -230,7 +240,9 @@ function init() {
     render();
 }
 function populatePokemonSelect() {
-    elements.pokemonSelect.innerHTML = POKEMON.map((pokemon)=>`<option value="${escapeHtml(pokemon.name)}">${escapeHtml(pokemon.name)}</option>`).join("");
+    const selectedValue = elements.pokemonSelect.value || "Mewtwo";
+    elements.pokemonSelect.innerHTML = POKEMON.map((pokemon)=>`<option value="${escapeHtml(pokemon.name)}">${escapeHtml(pokemonDisplayName(pokemon))}</option>`).join("");
+    elements.pokemonSelect.value = POKEMON.some((pokemon)=>pokemon.name === selectedValue) ? selectedValue : "Mewtwo";
 }
 function restoreState() {
     const saved = {
@@ -438,6 +450,7 @@ function render() {
 function renderStaticText() {
     document.documentElement.lang = prefs.language;
     document.title = prefs.language === "ja" ? "シャドウレイド リトレーン100%個体値の確率" : "Shadow Raid Purified Hundo Odds";
+    populatePokemonSelect();
     document.querySelectorAll("[data-i18n]").forEach((element)=>{
         const key = element.dataset.i18n;
         if (!key) return;
@@ -557,7 +570,7 @@ function renderPrimaryInsight(summaries, settings) {
     const threshold = purifiedThreshold(settings.purifyBonus);
     const pokemon = selectedPokemon();
     elements.contextStrip.innerHTML = `
-    <div class="context-card"><span>${copy("pokemonContext")}</span><strong>${escapeHtml(pokemon.name)}</strong></div>
+    <div class="context-card"><span>${copy("pokemonContext")}</span><strong>${escapeHtml(pokemonDisplayName(pokemon))}</strong></div>
     <button class="context-card context-button" type="button" data-focus-cp><span>${copy("analyzingCp")}</span><strong>${settings.cp}</strong><em>${copy("tapToEdit")}</em></button>
     <div class="context-card"><span>${copy("ivFloor")}</span><strong>${settings.raidFloor}/${settings.raidFloor}/${settings.raidFloor}</strong></div>
     <div class="context-card"><span>${copy("prePurifyTarget")}</span><strong>${threshold}/${threshold}/${threshold}+</strong></div>
@@ -685,7 +698,7 @@ function renderWatchlistPanel(summary) {
     const rows = filteredRows.map(renderWatchlistRow).join("");
     return `
     <details class="watch-panel" data-testid="${summary.raidLevel.key}-watchlist">
-      <summary class="watch-head">
+      <summary class="watch-head" data-watch-open="${escapeHtml(copy("watchOpen"))}" data-watch-close="${escapeHtml(copy("watchClose"))}">
         <div>
           <h2>${formatCopy("watchlistTitle", {
         scenario: scenarioLabel(summary)
@@ -799,8 +812,8 @@ function loadStateFromUrl() {
     const cp = params.get("cp");
     const floor = params.get("floor");
     const bonus = params.get("bonus");
-    if (pokemon && POKEMON.some((entry)=>entry.name.toLowerCase() === pokemon.toLowerCase())) {
-        state.selectedName = POKEMON.find((entry)=>entry.name.toLowerCase() === pokemon.toLowerCase())?.name || pokemon;
+    if (pokemon && POKEMON.some((entry)=>pokemonNameMatches(entry, pokemon))) {
+        state.selectedName = POKEMON.find((entry)=>pokemonNameMatches(entry, pokemon))?.name || pokemon;
     }
     if (cp) state.cp = clampInt(cp, MIN_CP, 99999, MIN_CP);
     if (floor) state.raidFloor = clampInt(floor, 0, MAX_IV, 6);
@@ -834,6 +847,13 @@ function formatCopy(key, values) {
 }
 function scenarioLabel(summary) {
     return summary.raidLevel.key === "normal" ? copy("nonWeather") : copy("weatherBoosted");
+}
+function pokemonDisplayName(pokemon) {
+    return prefs.language === "ja" ? pokemon.nameJa : pokemon.name;
+}
+function pokemonNameMatches(pokemon, value) {
+    const normalized = value.trim().toLowerCase();
+    return pokemon.name.toLowerCase() === normalized || pokemon.nameJa.toLowerCase() === normalized;
 }
 function validateOption(value, allowed, fallback) {
     return typeof value === "string" && allowed.includes(value) ? value : fallback;
