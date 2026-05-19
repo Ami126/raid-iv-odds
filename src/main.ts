@@ -1,4 +1,5 @@
 import { DATA_LAST_REVIEWED, POKEMON, type Pokemon } from "./data";
+import "../styles.css";
 import "./ux-enhancements";
 import {
   MAX_IV,
@@ -22,6 +23,8 @@ type AccentChoice = "aqua" | "mystic" | "valor" | "instinct" | "harmony";
 type LanguageChoice = "en" | "ja";
 type WatchFilter = "all" | "partial" | "strong" | "guaranteed";
 type ResultTone = "good" | "mixed" | "none";
+type WeatherChoice = "normal" | "boosted";
+type PriorityKind = "skip" | "maybe" | "high" | "catch";
 
 type Preferences = {
   theme: ThemeChoice;
@@ -29,6 +32,7 @@ type Preferences = {
   language: LanguageChoice;
   showDetails: boolean;
   watchFilter: WatchFilter;
+  weather: WeatherChoice;
 };
 
 type SavedState = Partial<
@@ -62,7 +66,11 @@ const DEFAULT_PREFS: Preferences = {
   language: "en",
   showDetails: true,
   watchFilter: "all",
+  weather: "normal",
 };
+
+// Update this one list when you want different one-tap bosses near the search box.
+const QUICK_PICK_BOSSES = ["Mewtwo", "Rayquaza", "Kyogre", "Groudon"] as const;
 
 const TEXT = {
   en: {
@@ -81,11 +89,25 @@ const TEXT = {
     accentValor: "Valor",
     accentInstinct: "Instinct",
     accentHarmony: "Harmony",
-    pokemonLabel: "Pokemon",
-    pokemonSearchHelp: "Type a boss name in English or Japanese.",
+    raidLookup: "Raid lookup",
+    pokemonLabel: "Pokémon",
+    pokemonPlaceholder: "Search boss, e.g. Mewtwo / ミュウツー",
+    pokemonSearchHelp: "Choose from the full boss list. Names sort by your language setting.",
     observedCpLabel: "Observed CP",
+    observedCpHelp: "Enter the CP shown on the catch screen.",
     decreaseCp: "Decrease CP",
     increaseCp: "Increase CP",
+    weatherSelectorLabel: "Weather",
+    nonWeatherShort: "Not boosted",
+    weatherBoostedShort: "Boosted",
+    quickPicksLabel: "Quick picks",
+    advancedSettings: "Advanced Settings",
+    viewControls: "View controls",
+    prioritySkip: "Skip",
+    priorityMaybe: "Maybe",
+    priorityHigh: "High priority",
+    priorityCatch: "Catch",
+    whyLabel: "Why?",
     manualBaseStats: "Manual base stats",
     baseAttack: "Base attack",
     baseDefense: "Base defense",
@@ -98,7 +120,7 @@ const TEXT = {
     showIvSpreads: "Show IV spreads",
     watchlistFilter: "Watchlist filter",
     filterAll: "All eligible CPs",
-    filterPartial: "Mixed odds only",
+    filterPartial: "Partial odds only",
     filterStrong: "50% or better",
     filterGuaranteed: "Guaranteed only",
     installApp: "Install app",
@@ -119,7 +141,7 @@ const TEXT = {
     cpNotPossibleTitle: "CP not possible for this boss",
     cpNotPossibleCopy:
       "No exact level 20 or level 25 IV spread can produce CP {cp} with the selected boss and IV floor.",
-    pokemonContext: "Pokemon",
+    pokemonContext: "Pokémon",
     analyzingCp: "Analyzing CP",
     ivFloor: "IV floor",
     baseStats: "Base stats",
@@ -131,7 +153,7 @@ const TEXT = {
     purifyHundos: "Purify hundos",
     misses: "Misses",
     reducedOdds: "Reduced odds",
-    impossibleAtLevel: "CP {cp} is not possible for this Pokemon at level {level} with the current IV floor. ",
+    impossibleAtLevel: "CP {cp} is not possible for this Pokémon at level {level} with the current IV floor. ",
     possibleNoGood:
       "CP {cp} is possible, but none of its {total} IV spread{plural} purify to 100%. ",
     guaranteedResult: "Every IV spread that can produce CP {cp} purifies to 100%.",
@@ -147,6 +169,7 @@ const TEXT = {
     watchSummary: "{shown}/{total} CPs, {guaranteed} guaranteed",
     tableCp: "CP",
     tableChance: "Chance",
+    tablePriority: "Priority",
     tableGoodTotal: "Good/Total",
     tableGoodIvs: "Good IVs",
     analyzeCp: "Analyze CP {cp}, {odds} chance",
@@ -158,7 +181,7 @@ const TEXT = {
     outsideRange: "Outside the selected boss catch ranges. {ranges}.",
     tryNearest: " Try {chips}",
     floorHint: "Counts every spread from {floor}/{floor}/{floor} through 15/15/15.",
-    dataHint: "Pokemon data last updated: {date}. Seeded list: {count} bosses/forms.",
+    dataHint: "Pokémon data last updated: {date}. Seeded list: {count} bosses/forms.",
     languageChanged: "Language changed to English.",
     guaranteedChanceTitle: "Guaranteed purified hundo",
     mixedChanceTitle: "{odds} purified-hundo chance",
@@ -170,6 +193,19 @@ const TEXT = {
     comboTitle: "{original} purifies to {purified}",
     hundoMarker: " -> 100%",
     watchTableLabel: "{scenario} eligible CPs",
+    screenshotBoss: "Boss",
+    screenshotCp: "Observed CP",
+    screenshotWeather: "Weather",
+    screenshotOdds: "Purified hundo odds",
+    screenshotSpreads: "{good}/{total} IV spreads",
+    whyImpossible:
+      "This CP is not possible for {scenario} with the selected Pokémon and IV floor.",
+    whyZero:
+      "This CP can come from {total} possible IV spread{plural}. None purify to 15/15/15.",
+    whyGuaranteed:
+      "This CP can come from {total} possible IV spread{plural}. All {good} purify to 15/15/15.",
+    whyMixed:
+      "This CP can come from {total} possible IV spreads. {good} purify to 15/15/15 and {bad} do not.",
   },
   ja: {
     skipToResults: "結果へスキップ",
@@ -187,11 +223,25 @@ const TEXT = {
     accentValor: "ヴァーラー",
     accentInstinct: "インスティンクト",
     accentHarmony: "ハーモニー",
-    pokemonLabel: "レイドボス",
-    pokemonSearchHelp: "日本語名・英語名のどちらでも検索できます。",
+    raidLookup: "レイド検索",
+    pokemonLabel: "ポケモン",
+    pokemonPlaceholder: "ボスを検索 例: Mewtwo / ミュウツー",
+    pokemonSearchHelp: "全ボス一覧から選択できます。表示名は言語設定に合わせて並び替わります。",
     observedCpLabel: "確認したCP",
+    observedCpHelp: "捕獲画面に表示されているCPを入力してください。",
     decreaseCp: "CPを1下げる",
     increaseCp: "CPを1上げる",
+    weatherSelectorLabel: "天候",
+    nonWeatherShort: "ブーストなし",
+    weatherBoostedShort: "ブーストあり",
+    quickPicksLabel: "クイック選択",
+    advancedSettings: "詳細設定",
+    viewControls: "表示コントロール",
+    prioritySkip: "スキップ",
+    priorityMaybe: "可能性あり",
+    priorityHigh: "優先",
+    priorityCatch: "捕獲推奨",
+    whyLabel: "理由",
     manualBaseStats: "種族値を手入力",
     baseAttack: "攻撃種族値",
     baseDefense: "防御種族値",
@@ -204,7 +254,7 @@ const TEXT = {
     showIvSpreads: "個体値候補を表示",
     watchlistFilter: "ウォッチリスト絞り込み",
     filterAll: "対象CPすべて",
-    filterPartial: "分岐ありのみ",
+    filterPartial: "一部のみ可能",
     filterStrong: "50%以上",
     filterGuaranteed: "確定のみ",
     installApp: "アプリを追加",
@@ -251,6 +301,7 @@ const TEXT = {
     watchSummary: "{shown}/{total} CP、確定 {guaranteed}",
     tableCp: "CP",
     tableChance: "確率",
+    tablePriority: "優先度",
     tableGoodTotal: "対象/合計",
     tableGoodIvs: "対象個体値",
     analyzeCp: "CP {cp} を判定、確率 {odds}",
@@ -274,6 +325,15 @@ const TEXT = {
     comboTitle: "{original} はリトレーン後 {purified}",
     hundoMarker: " → 100%",
     watchTableLabel: "{scenario}の対象CP",
+    screenshotBoss: "ボス",
+    screenshotCp: "確認したCP",
+    screenshotWeather: "天候",
+    screenshotOdds: "リトレーン100%確率",
+    screenshotSpreads: "{good}/{total} 候補",
+    whyImpossible: "このCPは、選択中のポケモン・個体値最低値では{scenario}に出ません。",
+    whyZero: "このCPには{total}個の個体値候補がありますが、15/15/15になる候補はありません。",
+    whyGuaranteed: "このCPには{total}個の個体値候補があり、{good}個すべてが15/15/15になります。",
+    whyMixed: "このCPには{total}個の個体値候補があります。{good}個は15/15/15になり、{bad}個はなりません。",
   },
 } as const;
 
@@ -281,11 +341,13 @@ type TextKey = keyof typeof TEXT.en;
 
 const elements = {
   pokemonInput: byId<HTMLInputElement>("pokemonInput"),
-  pokemonOptions: byId<HTMLDataListElement>("pokemonOptions"),
+  flowPokemonSelect: byId<HTMLSelectElement>("flowPokemonSelect"),
   pokemonSelect: byId<HTMLInputElement>("pokemonSelect"),
   pokemonHelp: byId<HTMLElement>("pokemonHelp"),
   cpInput: byId<HTMLInputElement>("cpInput"),
+  flowCpInput: byId<HTMLInputElement>("flowCpInput"),
   cpValidation: byId<HTMLElement>("cpValidation"),
+  flowCpValidation: byId<HTMLElement>("flowCpValidation"),
   manualStats: byId<HTMLInputElement>("manualStats"),
   atkInput: byId<HTMLInputElement>("atkInput"),
   defInput: byId<HTMLInputElement>("defInput"),
@@ -302,10 +364,13 @@ const elements = {
   watchlistGrid: byId<HTMLElement>("watchlistGrid"),
   dataHint: byId<HTMLElement>("dataHint"),
   languageStatus: byId<HTMLElement>("languageStatus"),
+  quickPickButtons: byId<HTMLElement>("quickPickButtons"),
   themeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-theme-choice]")),
   languageButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-language-choice]")),
   accentButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-accent-choice]")),
   cpStepButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-cp-step]")),
+  flowCpStepButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-flow-cp-step]")),
+  weatherButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-weather-choice]")),
   themeMeta: document.querySelector<HTMLMetaElement>('meta[name="theme-color"]'),
 };
 
@@ -324,12 +389,28 @@ function init(): void {
 
 function renderPokemonOptions(): void {
   const selectedValue = elements.pokemonSelect.value || "Mewtwo";
-  elements.pokemonOptions.innerHTML = sortedPokemon().map(
-    (pokemon) =>
-      `<option value="${escapeHtml(pokemonInputValue(pokemon))}" label="${escapeHtml(pokemon.name)}"></option>`,
-  ).join("");
   elements.pokemonSelect.value = POKEMON.some((pokemon) => pokemon.name === selectedValue) ? selectedValue : "Mewtwo";
+  elements.flowPokemonSelect.innerHTML = sortedPokemon()
+    .map(
+      (pokemon) =>
+        `<option value="${escapeHtml(pokemon.name)}" ${pokemon.name === elements.pokemonSelect.value ? "selected" : ""}>${escapeHtml(
+          pokemonInputValue(pokemon),
+        )}</option>`,
+    )
+    .join("");
   syncPokemonInputToSelected();
+  renderQuickPickButtons();
+}
+
+function renderQuickPickButtons(): void {
+  elements.quickPickButtons.innerHTML = QUICK_PICK_BOSSES.map((name) => {
+    const pokemon = POKEMON.find((entry) => entry.name === name);
+    if (!pokemon) return "";
+    const active = pokemon.name === elements.pokemonSelect.value;
+    return `<button class="quick-pick-button" type="button" data-quick-pick="${escapeHtml(
+      pokemon.name,
+    )}" ${active ? 'aria-pressed="true"' : 'aria-pressed="false"'}>${escapeHtml(pokemonDisplayName(pokemon))}</button>`;
+  }).join("");
 }
 
 function restoreState(): void {
@@ -345,6 +426,7 @@ function restoreState(): void {
     accent: validateOption(saved.accent, ["aqua", "mystic", "valor", "instinct", "harmony"], DEFAULT_PREFS.accent),
     language: validateOption(saved.language, ["en", "ja"], DEFAULT_PREFS.language),
     showDetails: typeof saved.showDetails === "boolean" ? saved.showDetails : DEFAULT_PREFS.showDetails,
+    weather: validateOption(saved.weather, ["normal", "boosted"], DEFAULT_PREFS.weather),
     watchFilter: validateOption(
       saved.watchFilter,
       ["all", "partial", "strong", "guaranteed"],
@@ -369,6 +451,7 @@ function restoreState(): void {
     Number.isFinite(Number(saved.cp)) && Number(saved.cp) >= MIN_CP
       ? String(clampInt(saved.cp, MIN_CP, 99999, MIN_CP))
       : String(maxCpFor(readBaseStats(), RAID_LEVELS[0]));
+  elements.flowCpInput.value = elements.cpInput.value;
   elements.showDetails.checked = prefs.showDetails;
   elements.watchFilter.value = prefs.watchFilter;
 }
@@ -386,6 +469,12 @@ function bindEvents(): void {
     commitPokemonInput(true);
   });
 
+  elements.flowPokemonSelect.addEventListener("change", () => {
+    elements.pokemonSelect.value = elements.flowPokemonSelect.value;
+    syncStatsToSelected();
+    render();
+  });
+
   elements.manualStats.addEventListener("change", () => {
     if (!elements.manualStats.checked) syncStatsToSelected();
     syncManualState();
@@ -394,11 +483,18 @@ function bindEvents(): void {
 
   [
     elements.cpInput,
+    elements.flowCpInput,
     elements.atkInput,
     elements.defInput,
     elements.staInput,
     elements.floorInput,
-  ].forEach((input) => input.addEventListener("input", () => render()));
+  ].forEach((input) =>
+    input.addEventListener("input", () => {
+      if (input === elements.flowCpInput) elements.cpInput.value = elements.flowCpInput.value;
+      if (input === elements.cpInput) elements.flowCpInput.value = elements.cpInput.value;
+      render();
+    }),
+  );
 
   elements.showDetails.addEventListener("change", () => {
     prefs.showDetails = elements.showDetails.checked;
@@ -417,6 +513,32 @@ function bindEvents(): void {
       elements.cpInput.value = String(clampInt(nextCp, MIN_CP, 99999, MIN_CP));
       render();
     });
+  });
+
+  elements.flowCpStepButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const delta = Number(button.dataset.flowCpStep);
+      const nextCp = clampInt(elements.cpInput.value, MIN_CP, 99999, MIN_CP) + delta;
+      elements.cpInput.value = String(clampInt(nextCp, MIN_CP, 99999, MIN_CP));
+      elements.flowCpInput.value = elements.cpInput.value;
+      render();
+    });
+  });
+
+  elements.weatherButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      prefs.weather = button.dataset.weatherChoice as WeatherChoice;
+      render();
+    });
+  });
+
+  elements.quickPickButtons.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest<HTMLButtonElement>("[data-quick-pick]");
+    if (!button?.dataset.quickPick) return;
+    elements.pokemonSelect.value = button.dataset.quickPick;
+    syncStatsToSelected();
+    render();
   });
 
   elements.themeButtons.forEach((button) => {
@@ -450,12 +572,14 @@ function bindEvents(): void {
     const button = event.target.closest<HTMLButtonElement>("[data-cp]");
     if (!button) return;
     elements.cpInput.value = button.dataset.cp ?? String(MIN_CP);
+    elements.flowCpInput.value = elements.cpInput.value;
     render();
     elements.resultsGrid.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
   elements.resultsGrid.addEventListener("click", handleCpButtonClick);
   elements.watchlistGrid.addEventListener("click", handleCpButtonClick);
+  elements.flowCpValidation.addEventListener("click", handleCpButtonClick);
   elements.contextStrip.addEventListener("input", handleSummaryEdit);
   elements.contextStrip.addEventListener("change", handleSummaryEdit);
   elements.contextStrip.addEventListener("keydown", handleSummaryKeydown);
@@ -515,7 +639,10 @@ function handleSummaryEdit(event: Event): void {
     return;
   }
 
-  if (control === "cp") elements.cpInput.value = event.target.value;
+  if (control === "cp") {
+    elements.cpInput.value = event.target.value;
+    elements.flowCpInput.value = event.target.value;
+  }
   if (control === "floor") elements.floorInput.value = event.target.value;
   if (control === "manual" && event.target instanceof HTMLInputElement) {
     elements.manualStats.checked = event.target.checked;
@@ -544,7 +671,9 @@ function handleSummaryKeydown(event: KeyboardEvent): void {
 }
 
 function syncPokemonInputToSelected(): void {
-  elements.pokemonInput.value = pokemonInputValue(selectedPokemon());
+  const value = pokemonInputValue(selectedPokemon());
+  elements.pokemonInput.value = value;
+  elements.flowPokemonSelect.value = selectedPokemon().name;
 }
 
 function syncStatsToSelected(): void {
@@ -592,8 +721,11 @@ function render(options: RenderOptions = {}): void {
   );
 
   renderStaticText();
+  elements.flowCpInput.value = String(settings.cp);
+  syncPokemonInputToSelected();
   renderHundoHints(settings.baseStats);
   renderCpValidation(summaries, settings);
+  renderFlowValidation();
   renderPrimaryInsight(summaries, settings, !options.preserveContext);
   renderAssumptionHints(settings);
   renderDataHint();
@@ -639,6 +771,12 @@ function renderStaticText(): void {
     const key = element.dataset.i18nAriaLabel as TextKey | undefined;
     if (!key) return;
     element.setAttribute("aria-label", copy(key));
+  });
+
+  document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-i18n-placeholder]").forEach((element) => {
+    const key = element.dataset.i18nPlaceholder as TextKey | undefined;
+    if (!key) return;
+    element.setAttribute("placeholder", copy(key));
   });
 
   document.querySelectorAll<HTMLOptionElement>("[data-floor-custom]").forEach((option) => {
@@ -709,6 +847,14 @@ function renderCpValidation(
   }`;
 }
 
+function renderFlowValidation(): void {
+  elements.flowCpInput.min = elements.cpInput.min;
+  elements.flowCpInput.max = elements.cpInput.max;
+  elements.flowCpInput.setAttribute("aria-invalid", elements.cpInput.getAttribute("aria-invalid") || "false");
+  elements.flowCpValidation.className = elements.cpValidation.className;
+  elements.flowCpValidation.innerHTML = elements.cpValidation.innerHTML;
+}
+
 function nearestPossibleCpButtons(summary: CpSummary, cp: number): string[] {
   return Array.from(summary.buckets.keys())
     .sort((left, right) => Math.abs(left - cp) - Math.abs(right - cp) || right - left)
@@ -735,50 +881,51 @@ function renderPrimaryInsight(
   settings: { baseStats: BaseStats; cp: number; raidFloor: number; purifyBonus: number },
   renderContext = true,
 ): void {
-  const eligible = summaries.filter((summary) => summary.total && summary.good);
-  const possible = summaries.filter((summary) => summary.total);
-  const best = eligible.slice().sort((left, right) => right.odds - left.odds)[0];
-  let state: ResultTone = "none";
-  let title = copy("cpNotPossibleTitle");
-  let body = formatCopy("cpNotPossibleCopy", { cp: settings.cp });
-
-  if (best) {
-    state = best.odds === 1 ? "good" : "mixed";
-    title =
-      best.odds === 1
-        ? copy("guaranteedChanceTitle")
-        : formatCopy("mixedChanceTitle", { odds: formatPercent(best.odds) });
-    body = formatCopy(best.odds === 1 ? "guaranteedInsight" : "mixedInsight", {
-      scenario: scenarioLabel(best),
-      good: best.good,
-      total: best.total,
-    });
-  } else if (possible.length) {
-    title = copy("zeroChanceTitle");
-    body = formatCopy("zeroInsight", {
-      scenarios: possible.map(scenarioLabel).join(prefs.language === "ja" ? "と" : " and "),
-    });
-  }
+  const summary = selectedWeatherSummary(summaries);
+  const priority = priorityFor(summary);
+  const state = summary.good ? (summary.good === summary.total ? "good" : "mixed") : "none";
+  const pokemon = selectedPokemon();
 
   elements.primaryInsight.className = `primary-insight ${state}`;
   elements.primaryInsight.innerHTML = `
-    <span class="insight-label">${copy("cpResult")}</span>
-    <span class="insight-title">${title}</span>
-    <p class="insight-copy">${body}</p>
+    <div class="screenshot-card-head">
+      <div>
+        <span class="insight-label">${copy("cpResult")}</span>
+        <span class="insight-title">${primaryInsightTitle(summary)}</span>
+      </div>
+      ${renderPriorityBadge(priority)}
+    </div>
+    <dl class="screenshot-facts">
+      <div>
+        <dt>${copy("screenshotBoss")}</dt>
+        <dd>${escapeHtml(pokemonDisplayName(pokemon))}</dd>
+      </div>
+      <div>
+        <dt>${copy("screenshotCp")}</dt>
+        <dd>${settings.cp}</dd>
+      </div>
+      <div>
+        <dt>${copy("screenshotWeather")}</dt>
+        <dd>${scenarioLabel(summary)}</dd>
+      </div>
+      <div>
+        <dt>${copy("screenshotOdds")}</dt>
+        <dd>${formatPercent(summary.odds)}</dd>
+      </div>
+      <div>
+        <dt>${copy("tableGoodTotal")}</dt>
+        <dd>${formatCopy("screenshotSpreads", { good: summary.good, total: summary.total })}</dd>
+      </div>
+    </dl>
+    <details class="why-detail">
+      <summary>${copy("whyLabel")}</summary>
+      <p>${whyText(summary)}</p>
+    </details>
   `;
 
   if (!renderContext) return;
 
-  const pokemon = selectedPokemon();
   elements.contextStrip.innerHTML = `
-    <div class="context-card context-edit">
-      <label class="context-label" for="summaryPokemonControl">${copy("pokemonContext")}</label>
-      <select id="summaryPokemonControl" class="summary-value" data-summary-control="pokemon">${renderPokemonSelectOptions(pokemon.name)}</select>
-    </div>
-    <div class="context-card context-edit">
-      <label class="context-label" for="summaryCpControl">${copy("analyzingCp")}</label>
-      <input id="summaryCpControl" class="summary-value" data-summary-control="cp" inputmode="numeric" min="${MIN_CP}" type="number" value="${settings.cp}" />
-    </div>
     <div class="context-card context-edit">
       <label class="context-label" for="summaryFloorControl">${copy("ivFloor")}</label>
       <select id="summaryFloorControl" class="summary-value" data-summary-control="floor">${renderIvFloorOptions(settings.raidFloor)}</select>
@@ -794,16 +941,66 @@ function renderPrimaryInsight(
   `;
 }
 
+function selectedWeatherSummary(summaries: CpSummary[]): CpSummary {
+  const key = prefs.weather === "boosted" ? "boosted" : "normal";
+  return summaries.find((summary) => summary.raidLevel.key === key) || summaries[0];
+}
+
+function priorityFor(summary: Pick<CpSummary | WatchlistRow, "good" | "total" | "odds">): PriorityKind {
+  if (!summary.total || !summary.good) return "skip";
+  if (summary.odds >= 1) return "catch";
+  if (summary.odds >= 0.5) return "high";
+  return "maybe";
+}
+
+function priorityLabel(priority: PriorityKind): string {
+  return copy(
+    {
+      skip: "prioritySkip",
+      maybe: "priorityMaybe",
+      high: "priorityHigh",
+      catch: "priorityCatch",
+    }[priority] as TextKey,
+  );
+}
+
+function renderPriorityBadge(priority: PriorityKind): string {
+  return `<span class="priority-badge priority-${priority}">${priorityLabel(priority)}</span>`;
+}
+
+function primaryInsightTitle(summary: CpSummary): string {
+  const priority = priorityFor(summary);
+  if (priority === "catch") return copy("guaranteedChanceTitle");
+  if (priority === "skip" && summary.total) return copy("zeroChanceTitle");
+  if (priority === "skip") return copy("cpNotPossibleTitle");
+  return formatCopy("mixedChanceTitle", { odds: formatPercent(summary.odds) });
+}
+
+function whyText(summary: CpSummary): string {
+  const plural = summary.total === 1 ? "" : "s";
+  if (!summary.total) {
+    return formatCopy("whyImpossible", { scenario: scenarioLabel(summary) });
+  }
+  if (!summary.good) {
+    return formatCopy("whyZero", { total: summary.total, plural });
+  }
+  if (summary.good === summary.total) {
+    return formatCopy("whyGuaranteed", { total: summary.total, good: summary.good, plural });
+  }
+  return formatCopy("whyMixed", { total: summary.total, good: summary.good, bad: summary.bad });
+}
+
 function renderResultPanel(summary: CpSummary): string {
   const state = resultState(summary);
   const badgeClass = summary.good === summary.total && summary.total ? "is-full" : summary.good ? "" : "is-zero";
   const nearest = renderNearest(summary);
+  const priority = priorityFor(summary);
 
   return `
     <article class="result-panel is-${state.kind}" data-testid="${summary.raidLevel.key}-result">
       <div class="result-head">
         <div>
-          <h2>${scenarioLabel(summary)}</h2>
+          <h2>${scenarioLabel(summary)} ${renderPriorityBadge(priority)}</h2>
           <p class="scenario-copy">${formatCopy("catchLevelRange", {
             level: summary.raidLevel.level,
             min: summary.minCp,
@@ -845,17 +1042,6 @@ function renderResultPanel(summary: CpSummary): string {
       ${renderCombos(summary)}
     </article>
   `;
-}
-
-function renderPokemonSelectOptions(selectedName: string): string {
-  return sortedPokemon()
-    .map(
-      (pokemon) =>
-        `<option value="${escapeHtml(pokemon.name)}" ${pokemon.name === selectedName ? "selected" : ""}>${escapeHtml(
-          pokemonInputValue(pokemon),
-        )}</option>`,
-    )
-    .join("");
 }
 
 function renderIvFloorOptions(selectedFloor: number): string {
@@ -995,6 +1181,7 @@ function renderWatchlistPanel(summary: CpSummary): string {
               <div class="watch-table-head" role="row">
                 <span>${copy("tableCp")}</span>
                 <span>${copy("tableChance")}</span>
+                <span>${copy("tablePriority")}</span>
                 <span>${copy("tableGoodTotal")}</span>
                 <span>${copy("tableGoodIvs")}</span>
               </div>
@@ -1009,6 +1196,7 @@ function renderWatchlistPanel(summary: CpSummary): string {
 function renderWatchlistRow(row: WatchlistRow): string {
   const oddsClass = row.good === row.total ? "full" : "partial";
   const comboPreview = previewGoodCombos(row.goodCombos);
+  const priority = priorityFor(row);
 
   return `
     <button class="watch-row" type="button" data-cp="${row.cp}" role="row" aria-label="${formatCopy("analyzeCp", {
@@ -1017,6 +1205,7 @@ function renderWatchlistRow(row: WatchlistRow): string {
     })}">
       <span class="watch-row-cp">${row.cp}</span>
       <span class="odds-token ${oddsClass}">${formatPercent(row.odds)}</span>
+      ${renderPriorityBadge(priority)}
       <span class="watch-row-ratio" data-label="${copy("tableGoodTotal")}">${row.good}/${row.total}</span>
       <span class="watch-row-combos">${escapeHtml(comboPreview)}</span>
     </button>
@@ -1068,6 +1257,9 @@ function updateControlState(): void {
   elements.accentButtons.forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.accentChoice === prefs.accent));
   });
+  elements.weatherButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.weatherChoice === prefs.weather));
+  });
   elements.showDetails.checked = prefs.showDetails;
   elements.watchFilter.value = prefs.watchFilter;
 }
@@ -1085,6 +1277,7 @@ function saveState(settings: { baseStats: BaseStats; cp: number; raidFloor: numb
     language: prefs.language,
     showDetails: prefs.showDetails,
     watchFilter: prefs.watchFilter,
+    weather: prefs.weather,
   };
 
   try {
@@ -1111,6 +1304,7 @@ function loadStateFromUrl(): SavedState {
   const pokemon = params.get("pokemon") || params.get("boss");
   const cp = params.get("cp");
   const floor = params.get("floor");
+  const weather = params.get("weather");
 
   if (pokemon && POKEMON.some((entry) => pokemonNameMatches(entry, pokemon))) {
     state.selectedName =
@@ -1119,6 +1313,7 @@ function loadStateFromUrl(): SavedState {
 
   if (cp) state.cp = clampInt(cp, MIN_CP, 99999, MIN_CP);
   if (floor) state.raidFloor = clampInt(floor, 0, MAX_IV, 6);
+  if (weather === "boosted" || weather === "normal") state.weather = weather;
   return state;
 }
 
@@ -1126,6 +1321,7 @@ function syncUrl(settings: { cp: number; raidFloor: number }): void {
   const params = new URLSearchParams();
   params.set("pokemon", selectedPokemon().name);
   params.set("cp", String(settings.cp));
+  if (prefs.weather === "boosted") params.set("weather", "boosted");
   if (settings.raidFloor !== 6) params.set("floor", String(settings.raidFloor));
 
   const nextUrl = `${window.location.pathname}?${params.toString()}`;

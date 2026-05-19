@@ -20,7 +20,6 @@
     <link rel="manifest" href="/raid-iv-odds/manifest.webmanifest" />
     <link rel="icon" href="/raid-iv-odds/assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" sizes="180x180" href="/raid-iv-odds/assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
@@ -70,14 +69,43 @@
         <div class="hundo-hints" id="hundoHints" aria-live="polite"></div>
       </section>
 
+      <section class="raid-flow" aria-label="Raid lookup" data-i18n-aria-label="raidLookup">
+        <div class="field raid-field boss-field">
+          <label for="flowPokemonSelect" data-i18n="pokemonLabel">Pokémon</label>
+          <select id="flowPokemonSelect"></select>
+          <span class="field-help" data-i18n="pokemonSearchHelp">Type a boss name in English or Japanese.</span>
+          <div class="quick-picks" aria-label="Quick picks" data-i18n-aria-label="quickPicksLabel">
+            <span data-i18n="quickPicksLabel">Quick picks</span>
+            <div id="quickPickButtons" class="quick-pick-buttons"></div>
+          </div>
+        </div>
+
+        <div class="field raid-field cp-field">
+          <label for="flowCpInput" data-i18n="observedCpLabel">Observed CP</label>
+          <div class="cp-stepper">
+            <button class="stepper-button" type="button" data-flow-cp-step="-1" aria-label="Decrease CP" data-i18n-aria-label="decreaseCp">-</button>
+            <input id="flowCpInput" inputmode="numeric" min="10" type="number" />
+            <button class="stepper-button" type="button" data-flow-cp-step="1" aria-label="Increase CP" data-i18n-aria-label="increaseCp">+</button>
+          </div>
+          <span class="field-help" data-i18n="observedCpHelp">Enter the CP shown on the catch screen.</span>
+          <span class="field-help cp-validation" id="flowCpValidation"></span>
+        </div>
+
+        <div class="field raid-field weather-field">
+          <span data-i18n="weatherSelectorLabel">Weather</span>
+          <div class="segmented weather-segment" aria-label="Weather" data-i18n-aria-label="weatherSelectorLabel">
+            <button type="button" data-weather-choice="normal" data-i18n="nonWeatherShort">Not boosted</button>
+            <button type="button" data-weather-choice="boosted" data-i18n="weatherBoostedShort">Boosted</button>
+          </div>
+        </div>
+      </section>
+
       <section class="insight-surface" aria-label="Current verdict">
         <div class="primary-insight" id="primaryInsight"></div>
-        <div class="context-strip" id="contextStrip"></div>
       </section>
 
       <div class="state-controls" aria-hidden="true">
         <input id="pokemonInput" autocomplete="off" spellcheck="false" />
-        <datalist id="pokemonOptions"></datalist>
         <input id="pokemonSelect" type="hidden" value="Mewtwo" />
         <span id="pokemonHelp"></span>
         <input id="cpInput" min="10" type="number" />
@@ -107,26 +135,30 @@
         <span id="floorHint"></span>
       </div>
 
-      <section class="utility-bar" aria-label="View controls">
-        <div class="utility-control">
-          <label class="toggle-row" for="showDetails">
-            <input id="showDetails" type="checkbox" checked />
-            <span data-i18n="showIvSpreads">Show IV spreads</span>
-          </label>
-        </div>
-        <div class="field compact-field utility-control">
-          <label for="watchFilter" data-i18n="watchlistFilter">Watchlist filter</label>
-          <select id="watchFilter">
-            <option value="all" data-i18n="filterAll">All eligible CPs</option>
-            <option value="partial" data-i18n="filterPartial">Mixed odds only</option>
-            <option value="strong" data-i18n="filterStrong">50% or better</option>
-            <option value="guaranteed" data-i18n="filterGuaranteed">Guaranteed only</option>
-          </select>
-        </div>
-        <button class="secondary-button install-button" id="installButton" type="button" hidden>
-          <span data-i18n="installApp">Install app</span>
-        </button>
-      </section>
+      <details class="advanced-settings">
+        <summary class="advanced-summary"><span data-i18n="advancedSettings">Advanced Settings</span></summary>
+        <div class="context-strip" id="contextStrip"></div>
+        <section class="utility-bar" aria-label="View controls" data-i18n-aria-label="viewControls">
+          <div class="utility-control">
+            <label class="toggle-row" for="showDetails">
+              <input id="showDetails" type="checkbox" checked />
+              <span data-i18n="showIvSpreads">Show IV spreads</span>
+            </label>
+          </div>
+          <div class="field compact-field utility-control">
+            <label for="watchFilter" data-i18n="watchlistFilter">Watchlist filter</label>
+            <select id="watchFilter">
+              <option value="all" data-i18n="filterAll">All eligible CPs</option>
+              <option value="partial" data-i18n="filterPartial">Partial odds only</option>
+              <option value="strong" data-i18n="filterStrong">50% or better</option>
+              <option value="guaranteed" data-i18n="filterGuaranteed">Guaranteed only</option>
+            </select>
+          </div>
+          <button class="secondary-button install-button" id="installButton" type="button" hidden>
+            <span data-i18n="installApp">Install app</span>
+          </button>
+        </section>
+      </details>
 
       <section class="results-grid" id="resultsGrid" aria-live="polite"></section>
 
