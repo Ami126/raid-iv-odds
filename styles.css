@@ -447,6 +447,7 @@ h3 {
 
 .insight-surface {
   margin-top: 16px;
+  min-height: 248px;
   padding: 16px;
 }
 
@@ -454,7 +455,7 @@ h3 {
   background: var(--surface-muted);
   border: 1px solid var(--line);
   border-radius: 8px;
-  min-height: 112px;
+  min-height: 214px;
   padding: 16px;
 }
 
@@ -1424,6 +1425,14 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .insight-surface {
+    min-height: 330px;
+  }
+
+  .primary-insight {
+    min-height: 296px;
+  }
+
   .odds-badge {
     text-align: left;
     width: 100%;
@@ -1510,6 +1519,14 @@ h3 {
 
   .context-strip {
     gap: 8px;
+  }
+
+  .insight-surface {
+    min-height: 438px;
+  }
+
+  .primary-insight {
+    min-height: 404px;
   }
 
   .context-edit {
