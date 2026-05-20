@@ -640,6 +640,11 @@ h3 {
 
 .context-card select.summary-value {
   appearance: auto;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.2;
+  min-height: 46px;
+  padding: 9px 12px;
 }
 
 .context-card:focus-within {
